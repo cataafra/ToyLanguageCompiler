@@ -65,8 +65,3 @@ class Scanner:
 
     def __str__(self):
         return str(self.pif) + '\n' + str(self.symbol_table)
-
-
-scanner = Scanner('token.in')
-scanner.scan('p1err.txt')
-scanner.write_to_files('st.out', 'pif.out')
