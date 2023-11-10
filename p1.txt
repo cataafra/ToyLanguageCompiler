@@ -1,0 +1,14 @@
+a: int;
+b: int;
+sum: int = 0;
+
+read a;
+read b;
+
+sum = a + b;
+
+if (sum <= 21) {
+    print "true";
+} else {
+    print "false";
+}
