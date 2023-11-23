@@ -1,3 +1,4 @@
+from FiniteAutomation import FiniteAutomation
 from HashTable import HashTable
 import re
 
@@ -15,7 +16,9 @@ class Scanner:
                     self.tokens.append(line)
 
     def scan(self, src_file):
-        correct= True
+        fa_nc = FiniteAutomation("fa_numeric-const.in")
+        fa_id = FiniteAutomation("fa_identifier.in")
+        correct = True
         with open(src_file, 'r') as file:
             line_idx = 0
             for line in file:
@@ -27,14 +30,14 @@ class Scanner:
                     for token in tokens:
                         if token in self.tokens:
                             self.pif.append((token, -1))
-                        elif re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', token):
+                        elif fa_id.is_accept(token):
                             # Identifiers
                             if not self.symbol_table.contains(token):
                                 self.symbol_table.add(token)
                             idx = self.symbol_table.get_position(token)
                             self.pif.append(('id', idx))
                             self.symbol_table.add(token)
-                        elif re.match(r'^\d+$', token) or re.match(r'^".*"$', token):
+                        elif fa_nc.is_accept(token) or re.match(r'^".*"$', token):
                             # Numeric and string constants
                             if not self.symbol_table.contains(token):
                                 self.symbol_table.add(token)
@@ -45,8 +48,8 @@ class Scanner:
                             self.pif.append((token, -1))
                         else:
                             print(f"lexical error: invalid token {token} on line {line_idx}.")
-                            return False
-        print("lexically correct")
+                            correct = False
+        print("lexically correct") if correct else ""
 
     def write_to_files(self, symbol_file, pif_file):
         with open(symbol_file, 'w') as file:
