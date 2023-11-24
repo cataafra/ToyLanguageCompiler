@@ -21,7 +21,7 @@ class FiniteAutomation:
     def __str__(self):
         return "states: " + str(self.states) + "\n" \
             + "alphabet: " + str(self.alphabet) + "\n" \
-            + "transition: " + str(self.transitions) + "\n" \
+            + "transitions: " + str(self.transitions) + "\n" \
             + "start: " + str(self.start) + "\n" \
             + "final: " + str(self.final) + "\n"
 
@@ -37,7 +37,3 @@ class FiniteAutomation:
                 key = (transition_str.split(" ")[0].strip(), transition_str.split(" ")[1].strip())
                 value = transition_str.split(" ")[2].strip()
                 self.transitions[key] = value
-
-
-fa = FiniteAutomation("fa_identifier.in")
-print(fa.is_accept("miau_test"))
