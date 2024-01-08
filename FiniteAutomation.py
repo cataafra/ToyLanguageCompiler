@@ -37,3 +37,7 @@ class FiniteAutomation:
                 key = (transition_str.split(" ")[0].strip(), transition_str.split(" ")[1].strip())
                 value = transition_str.split(" ")[2].strip()
                 self.transitions[key] = value
+
+
+fa = FiniteAutomation("fa_numeric-const.in")
+print(fa.is_accept("-0"))

@@ -1,0 +1,52 @@
+Non Terminals: program statement_sequence statement_sequence_prime statement declaration normal_declaration arr_declaration type assignment assignment_prime expression simple_expression term factor read_statement print_statement if_statement else_part while_statement for_statement relational_operator add_operator mul_operator
+Terminals:   ; { } ( ) [ ] = < <= > >= == != + - * / int string bool read print if else while for identifier integer bool string
+Start: program
+program -> statement_sequence
+statement_sequence -> statement;statement_sequence
+statement_sequence_prime -> statement;statement_sequence_prime
+statement_sequence_prime -> epsilon
+statement -> declaration
+statement -> assignment
+statement -> read_statement
+statement -> print_statement
+statement -> if_statement
+statement -> while_statement
+statement -> for_statement
+declaration -> normal_declaration ;
+declaration -> arr_declaration ;
+normal_declaration -> identifier : type
+arr_declaration -> identifier : type[integer]
+type -> int
+type -> string
+type -> bool
+assignment -> identifier assignment_prime = expression ;
+assignment_prime -> [ expression ]
+assignment_prime -> epsilon
+expression -> simple_expression relational_operator simple_expression
+expression -> simple_expression
+simple_expression -> term add_operator simple_expression
+simple_expression -> term
+term -> factor mul_operator term
+term -> factor
+factor -> integer
+factor -> identifier
+factor -> (expression)
+factor -> bool
+factor -> string
+read_statement -> read identifier ;
+print_statement -> print expression;
+if_statement -> if ( expression ) { statement_sequence } else_part
+else_part -> else { statement_sequence }
+else_part -> epsilon
+while_statement -> while (expression) {statement_sequence}
+for_statement -> for (identifier = expression ; expression ; identifier = expression ) { statement_sequence }
+relational_operator -> <
+relational_operator -> <=
+relational_operator -> >
+relational_operator -> >=
+relational_operator -> ==
+relational_operator -> !=
+add_operator -> +
+add_operator -> -
+mul_operator -> *
+mul_operator -> /
