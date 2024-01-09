@@ -20,71 +20,16 @@ class LR0Item:
         return hash((self.lhs, tuple(self.rhs), self.dot))
 
 
-class FormalGrammar:
-    def __init__(self, filename):
-        self.filename = filename
-        self.non_terminals = []
-        self.terminals = []
-        self.productions = {}
-        self.start = ''
-        self.grammar = {}
+class LR0Parser:
+    def __init__(self, grammar, start_symbol):
+        self.grammar = grammar
+        self.grammar['S\''] = [[start_symbol]]
+        self.start_symbol = 'S\''
         self.states = []
         self.action = {}
         self.goto_table = {}
-
-        self.read_from_file()
-        self.transform_grammar()
-
-        self.start_symbol = 'S\''  # Augmented start symbol
-        self.grammar[self.start_symbol] = [[self.start]]  # Augmenting the grammar
-
         self.construct_states()
         self.build_parsing_table()
-
-    def get_all_productions(self, non_terminal):
-        return self.productions[non_terminal]
-
-    def __str__(self):
-        return "non-terminals: " + str(self.non_terminals) + "\n" \
-            + "terminals: " + str(self.terminals) + "\n" \
-            + "productions: " + str(self.productions) + "\n" \
-            + "start: " + str(self.start) + "\n"
-
-    def is_cfg(self):
-        # TODO: check if all values in productions are non-terminals
-
-        for key in self.productions:
-            if key not in self.non_terminals:
-                print(f"{key} is not a non-terminal")
-                return False
-        return True
-
-    def print_productions(self, non_terminal):
-        print(f"Productions for {non_terminal}:")
-        for production in self.productions[non_terminal]:
-            print(f"\t{non_terminal} -> {production}")
-
-    def read_from_file(self):
-        with open(self.filename) as file:
-            self.non_terminals = file.readline().strip().split(":").pop().strip().split(" ")
-            print(self.non_terminals)
-            self.terminals = file.readline().strip().split(":").pop().strip().split(" ")
-            self.start = file.readline().strip().split(":").pop().strip()
-            for line in file:
-                production_str = line.strip().split("->")
-                key = production_str[0].strip()
-                value = production_str[1].strip()
-                if key not in self.productions:
-                    self.productions[key] = []
-                self.productions[key].append(value)
-
-    def transform_grammar(self):
-        transformed_grammar = {}
-        for lhs, rhs_list in self.productions.items():
-            transformed_rhs = [rhs.split() for rhs in rhs_list]
-            transformed_grammar[lhs] = transformed_rhs
-        self.grammar = transformed_grammar
-        self.grammar['S\''] = [[self.start]]
 
     def closure(self, items):
         closure = set(items)
@@ -102,11 +47,10 @@ class FormalGrammar:
             closure |= new_items
 
     def compute_goto(self, items, symbol):
-        return self.closure(
-            {LR0Item(item.lhs, item.rhs, item.dot + 1) for item in items if item.next_symbol() == symbol})
+        return self.closure({LR0Item(item.lhs, item.rhs, item.dot + 1) for item in items if item.next_symbol() == symbol})
 
     def construct_states(self):
-        initial_item = LR0Item(self.start_symbol, [self.start], 0)
+        initial_item = LR0Item(self.start_symbol, ['S'], 0)
         self.states.append(self.closure({initial_item}))
 
         while True:
@@ -162,7 +106,14 @@ class FormalGrammar:
             print(f"State {state}, Symbol '{symbol}': {value}")
 
 
-gr = FormalGrammar("grammar_simple.in")
-print(gr)
-print(gr.is_cfg())
-gr.parse()
+# Example grammar
+grammar = {
+    'S': [['A', 'A']],
+    'A': [['a', 'A'], ['b']]
+}
+
+# Initialize parser with the new grammar and start symbol
+parser = LR0Parser(grammar, 'S')
+
+# Parse the input string
+parser.parse()
