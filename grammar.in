@@ -2,8 +2,8 @@ Non Terminals: program statement_sequence statement_sequence_prime statement dec
 Terminals:   ; { } ( ) [ ] = < <= > >= == != + - * / int string bool read print if else while for identifier integer bool string
 Start: program
 program -> statement_sequence
-statement_sequence -> statement;statement_sequence
-statement_sequence_prime -> statement;statement_sequence_prime
+statement_sequence -> statement ; statement_sequence
+statement_sequence_prime -> statement ; statement_sequence_prime
 statement_sequence_prime -> epsilon
 statement -> declaration
 statement -> assignment
@@ -34,7 +34,7 @@ factor -> (expression)
 factor -> bool
 factor -> string
 read_statement -> read identifier ;
-print_statement -> print expression;
+print_statement -> print expression ;
 if_statement -> if ( expression ) { statement_sequence } else_part
 else_part -> else { statement_sequence }
 else_part -> epsilon

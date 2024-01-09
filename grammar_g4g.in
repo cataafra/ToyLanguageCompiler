@@ -1,0 +1,6 @@
+Non Terminals: S A
+Terminals: a b
+Start: S
+S -> A A
+A -> a A
+A -> b
