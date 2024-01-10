@@ -1,6 +1,5 @@
 from Parser import LR0Parser
 
-
 class FormalGrammar:
     def __init__(self, filename):
         self.filename = filename
@@ -46,9 +45,3 @@ class FormalGrammar:
                 self.productions[key].append(value)
 
 
-
-gr = FormalGrammar("grammar.in")
-print(gr)
-
-parser = LR0Parser(gr.productions, gr.start)
-parser.parse('')

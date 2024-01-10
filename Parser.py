@@ -50,12 +50,13 @@ class LR0Item:
 
 
 class LR0Parser:
-    def __init__(self, grammar, start_symbol):
+    def __init__(self, grammar, start_symbol, terminals):
         self.conflicts = []
         augmented_start_symbol = f"{start_symbol}'"
         self.grammar = grammar.copy()
         self.grammar[augmented_start_symbol] = [[start_symbol]]
         self.start_symbol = augmented_start_symbol
+        self.terminals = terminals
         self.states = []
         self.action = {}
         self.goto_table = {}
@@ -130,6 +131,15 @@ class LR0Parser:
                     else:
                         self.action[action_key] = action_value
 
+                    for symbol in self.terminals:
+                        action_key = (i, symbol)
+                        action_value = ('reduce', item.lhs, item.rhs)
+                        if action_key in self.action:
+                            if self.action[action_key] != action_value:
+                                self.conflicts.append((action_key, self.action[action_key], action_value))
+                        else:
+                            self.action[action_key] = action_value
+
         if self.conflicts:
             print("Conflicts found in the parsing table:")
             for conflict in self.conflicts:
@@ -165,51 +175,45 @@ class LR0Parser:
 
         # Initialize ParserOutput object
         parse_output = ParserOutput()
-        node_id_stack = []
+        node_id_stack = [parse_output.add_node(self.start_symbol)]  # Root node for augmented start symbol
 
         # Parsing process
         stack = [0]
-        node_id_stack.append(parse_output.add_node('S\''))  # Add start symbol as root
         input_symbols = input_string.split() + ['$']
+        input_index = 0  # Track the position in the input string
+
         while True:
             state = stack[-1]
-            node_id = node_id_stack[-1]
             symbol = input_symbols[0]
+
             if (state, symbol) in self.action:
                 action = self.action[(state, symbol)]
                 if action[0] == 'shift':
                     stack.append(action[1])
-                    node_id_stack.append(parse_output.add_node(symbol, node_id))
+                    node_id_stack.append(parse_output.add_node(symbol))
                     input_symbols.pop(0)
+                    input_index += 1
                 elif action[0] == 'reduce':
                     lhs, rhs = action[1], action[2]
-                    # Pop the states and nodes corresponding to the right-hand side symbols
+                    rhs_node_ids = []
                     for _ in rhs:
                         stack.pop()
-                        node_id_stack.pop()
-                    # Push the new state based on the goto table
+                        rhs_node_ids.append(node_id_stack.pop())
                     new_state = self.goto_table[(stack[-1], lhs)]
                     stack.append(new_state)
-                    # Create a new node for the non-terminal and link it to the previous top node
                     non_terminal_node_id = parse_output.add_node(lhs, node_id_stack[-1] if node_id_stack else None)
+                    for node_id in rhs_node_ids:
+                        parse_output.edges.append((non_terminal_node_id, node_id))
                     node_id_stack.append(non_terminal_node_id)
                 elif action[0] == 'accept':
+                    if len(input_symbols) > 1:
+                        print("\nError: End of input not reached.")
+                        return None
                     print("\nSuccessfully parsed.")
                     parse_output.display()
                     return parse_output
             else:
-                print("\nError in parsing.")
+                print(f"\nError in parsing at position {input_index}: Unexpected symbol '{symbol}'.")
                 return None
-
-
-grammar = {
-    'S': [['a', 'S'], ['b']]
-}
-
-parser = LR0Parser(grammar, 'S')
-input_string = "a b"
-
-# Parse the input string to get the parse tree
-parser.parse(input_string)
 
 
