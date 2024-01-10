@@ -1,10 +1,30 @@
-class TreeNode:
-    def __init__(self, symbol):
-        self.symbol = symbol
-        self.children = []
+class ParserOutput:
+    def __init__(self):
+        self.nodes = []
+        self.edges = []
 
-    def add_child(self, child):
-        self.children.append(child)
+    def add_node(self, symbol, father=None):
+        node_id = len(self.nodes)
+        self.nodes.append(symbol)
+        if father is not None:
+            self.edges.append((father, node_id))
+        return node_id
+
+    def print_tree(self):
+        print("Parsing Tree:")
+        for edge in self.edges:
+            father, child = edge
+            print(f"{self.nodes[father]} -> {self.nodes[child]}")
+
+    def write_tree_to_file(self, file_path):
+        with open(file_path, 'w') as f:
+            f.write("Parsing Tree:\n")
+            for edge in self.edges:
+                father, child = edge
+                f.write(f"{self.nodes[father]} -> {self.nodes[child]}\n")
+
+    def display(self):
+        self.print_tree()
 
 
 class LR0Item:
@@ -87,21 +107,35 @@ class LR0Parser:
                 symbol = item.next_symbol()
                 if symbol:
                     goto_state = self.compute_goto(state, symbol)
+                    action_key = (i, symbol)
                     if goto_state in self.states:
                         if symbol in self.grammar:  # Non-terminal
-                            self.goto_table[(i, symbol)] = self.states.index(goto_state)
+                            self.goto_table[action_key] = self.states.index(goto_state)
                         else:  # Terminal
-                            self.action[(i, symbol)] = ('shift', self.states.index(goto_state))
+                            action_value = ('shift', self.states.index(goto_state))
+                            if action_key in self.action:
+                                if self.action[action_key] != action_value:
+                                    self.conflicts.append((action_key, self.action[action_key], action_value))
+                            else:
+                                self.action[action_key] = action_value
                 elif item.is_complete():
-                    if item.lhs == 'S\'':  # Check if the item is from the augmented start rule
-                        self.action[(i, '$')] = ('accept',)
+                    action_key = (i, '$')
+                    if item.lhs == 'S\'':
+                        action_value = ('accept',)
                     else:
-                        for prod in self.grammar[item.lhs]:
-                            if prod == item.rhs:
-                                self.action[(i, '$')] = ('reduce', item.lhs, prod)
-        for key, value in self.action.items():
-            if len(value) > 1:
-                self.conflicts.append((key, value))
+                        action_value = ('reduce', item.lhs, item.rhs)
+                    if action_key in self.action:
+                        if self.action[action_key] != action_value:
+                            self.conflicts.append((action_key, self.action[action_key], action_value))
+                    else:
+                        self.action[action_key] = action_value
+
+        if self.conflicts:
+            print("Conflicts found in the parsing table:")
+            for conflict in self.conflicts:
+                state, symbol, actions = conflict
+                print(f"Conflict in state {state} on symbol '{symbol}': {actions}")
+            print("The grammar is not LR(0).")
 
     def check_conflicts(self):
         if self.conflicts:
@@ -129,89 +163,53 @@ class LR0Parser:
             state, symbol = key
             print(f"State {state}, Symbol '{symbol}': {value}")
 
-        stack = [0]
-        input_symbols = input_string.split() + ['']
-        parse_tree_root = TreeNode("ROOT")
-        current_node = parse_tree_root
-        node_stack = [current_node]
+        # Initialize ParserOutput object
+        parse_output = ParserOutput()
+        node_id_stack = []
 
+        # Parsing process
+        stack = [0]
+        node_id_stack.append(parse_output.add_node('S\''))  # Add start symbol as root
+        input_symbols = input_string.split() + ['$']
         while True:
             state = stack[-1]
+            node_id = node_id_stack[-1]
             symbol = input_symbols[0]
             if (state, symbol) in self.action:
                 action = self.action[(state, symbol)]
                 if action[0] == 'shift':
                     stack.append(action[1])
-                    # Creating a new tree node for the shifted symbol
-                    new_node = TreeNode(symbol)
-                    current_node.add_child(new_node)
-                    node_stack.append(new_node)
-                    current_node = new_node
-                    input_symbols = input_symbols[1:]
+                    node_id_stack.append(parse_output.add_node(symbol, node_id))
+                    input_symbols.pop(0)
                 elif action[0] == 'reduce':
-                    # Logic for handling reductions
-                    lhs, rhs = action[1], action[2]  # The production being reduced
-                    reduce_node = TreeNode(lhs)  # Node for the LHS of the production
-                    # Pop the stack for the number of symbols in RHS of the production
-                    for _ in range(len(rhs)):
+                    lhs, rhs = action[1], action[2]
+                    # Pop the states and nodes corresponding to the right-hand side symbols
+                    for _ in rhs:
                         stack.pop()
-                        node_stack.pop()
-                    current_node = node_stack[-1]  # Set current node to the new top of the stack
-                    current_node.add_child(reduce_node)  # Add the reduce node to the tree
-                    stack.append(self.goto_table[(stack[-1], lhs)])  # Update the state stack
-                    node_stack.append(reduce_node)  # Update the node stack
+                        node_id_stack.pop()
+                    # Push the new state based on the goto table
+                    new_state = self.goto_table[(stack[-1], lhs)]
+                    stack.append(new_state)
+                    # Create a new node for the non-terminal and link it to the previous top node
+                    non_terminal_node_id = parse_output.add_node(lhs, node_id_stack[-1] if node_id_stack else None)
+                    node_id_stack.append(non_terminal_node_id)
                 elif action[0] == 'accept':
                     print("\nSuccessfully parsed.")
-                    return parse_tree_root
+                    parse_output.display()
+                    return parse_output
             else:
                 print("\nError in parsing.")
-                return
-
-
-class ParserOutput:
-    def __init__(self, parse_tree):
-        self.parse_tree = parse_tree
-        self.table = self.build_table()
-
-    def build_table(self):
-        table = []
-
-        def traverse(node, parent=None, siblings=None):
-            if siblings is None:
-                siblings = []
-            entry = {'Node': node.symbol, 'Parent': parent.symbol if parent else None,
-                     'Siblings': [sib.symbol for sib in siblings]}
-            table.append(entry)
-            for child in node.children:
-                new_siblings = [s for s in node.children if s != child]
-                traverse(child, node, new_siblings)
-
-        traverse(self.parse_tree)
-        return table
-
-    def print_to_screen(self):
-        for row in self.table:
-            print(row)
-
-    def print_to_file(self, filename):
-        with open(filename, 'w') as file:
-            for row in self.table:
-                file.write(f"{row}\n")
+                return None
 
 
 grammar = {
-    'S': [['A']],
-    'A': [['a', 'A'], ['b']]
+    'S': [['a', 'S'], ['b']]
 }
 
 parser = LR0Parser(grammar, 'S')
-input_string = "a a b"
+input_string = "a b"
 
 # Parse the input string to get the parse tree
-parse_tree = parser.parse(input_string)
+parser.parse(input_string)
 
-if parse_tree:
-    output = ParserOutput(parse_tree)
-    output.print_to_screen()
-else:
-    print("Failed to parse the input string.")
+
