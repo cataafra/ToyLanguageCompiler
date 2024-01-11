@@ -1,14 +1,14 @@
-a: int;
-b: int;
-sum: int = 0;
+a: int ;
+b: int ;
+sum: int = 0 ;
 
-read a;
-read b;
+read a ;
+read b ;
 
-sum = a + b;
+sum = a + b ;
 
 if (sum <= 21) {
-    print "true";
+    print "true" ;
 } else {
-    print "false";
+    print "false" ;
 }

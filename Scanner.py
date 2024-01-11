@@ -35,7 +35,7 @@ class Scanner:
                             if not self.symbol_table.contains(token):
                                 self.symbol_table.add(token)
                             idx = self.symbol_table.get_position(token)
-                            self.pif.append(('id', idx))
+                            self.pif.append(('identifier', idx))
                             self.symbol_table.add(token)
                         elif fa_nc.is_accept(token) or re.match(r'^".*"$', token):
                             # Numeric and string constants

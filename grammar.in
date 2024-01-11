@@ -1,10 +1,10 @@
-Non Terminals: program statement_sequence statement_sequence_prime statement declaration normal_declaration arr_declaration type assignment assignment_prime expression simple_expression term factor read_statement print_statement if_statement else_part while_statement for_statement relational_operator add_operator mul_operator
-Terminals:   ; { } ( ) [ ] = < <= > >= == != + - * / int string bool read print if else while for identifier integer bool string
+Non Terminals: program statement_sequence statement_sequence_tail statement declaration normal_declaration arr_declaration type assignment assignment_prime expression expression_prime simple_expression simple_expression_prime term term_prime factor read_statement print_statement if_statement else_part while_statement for_statement relational_operator add_operator mul_operator
+Terminals: ; { } ( ) [ ] = < <= > >= == != + - * / int string bool read print if else while for identifier integer bool string
 Start: program
 program -> statement_sequence
-statement_sequence -> statement ; statement_sequence
-statement_sequence_prime -> statement ; statement_sequence_prime
-statement_sequence_prime -> epsilon
+statement_sequence -> statement statement_sequence_tail
+statement_sequence_tail -> ; statement statement_sequence_tail
+statement_sequence_tail -> epsilon
 statement -> declaration
 statement -> assignment
 statement -> read_statement
@@ -12,25 +12,27 @@ statement -> print_statement
 statement -> if_statement
 statement -> while_statement
 statement -> for_statement
-declaration -> normal_declaration ;
-declaration -> arr_declaration ;
-normal_declaration -> identifier : type
-arr_declaration -> identifier : type[integer]
+declaration -> identifier declaration_prime
+declaration_prime -> : type ;
+declaration_prime -> : type [ integer ] ;
 type -> int
 type -> string
 type -> bool
-assignment -> identifier assignment_prime = expression ;
-assignment_prime -> [ expression ]
-assignment_prime -> epsilon
-expression -> simple_expression relational_operator simple_expression
-expression -> simple_expression
-simple_expression -> term add_operator simple_expression
-simple_expression -> term
-term -> factor mul_operator term
-term -> factor
+assignment -> identifier assignment_prime
+assignment_prime -> [ expression ] = expression ;
+assignment_prime -> = expression ;
+expression -> simple_expression expression_prime
+expression_prime -> relational_operator simple_expression
+expression_prime -> epsilon
+simple_expression -> term simple_expression_prime
+simple_expression_prime -> add_operator term simple_expression_prime
+simple_expression_prime -> epsilon
+term -> factor term_prime
+term_prime -> mul_operator factor term_prime
+term_prime -> epsilon
 factor -> integer
 factor -> identifier
-factor -> (expression)
+factor -> ( expression )
 factor -> bool
 factor -> string
 read_statement -> read identifier ;
@@ -38,8 +40,8 @@ print_statement -> print expression ;
 if_statement -> if ( expression ) { statement_sequence } else_part
 else_part -> else { statement_sequence }
 else_part -> epsilon
-while_statement -> while (expression) {statement_sequence}
-for_statement -> for (identifier = expression ; expression ; identifier = expression ) { statement_sequence }
+while_statement -> while ( expression ) { statement_sequence }
+for_statement -> for ( identifier = expression ; expression ; identifier = expression ) { statement_sequence }
 relational_operator -> <
 relational_operator -> <=
 relational_operator -> >
