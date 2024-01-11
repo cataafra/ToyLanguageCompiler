@@ -1,32 +1,3 @@
-class ParserOutput:
-    def __init__(self):
-        self.nodes = []
-        self.edges = []
-
-    def add_node(self, symbol, father=None):
-        node_id = len(self.nodes)
-        self.nodes.append(symbol)
-        if father is not None:
-            self.edges.append((father, node_id))
-        return node_id
-
-    def print_tree(self):
-        print("Parsing Tree:")
-        for edge in self.edges:
-            father, child = edge
-            print(f"{self.nodes[father]} -> {self.nodes[child]}")
-
-    def write_tree_to_file(self, file_path):
-        with open(file_path, 'w') as f:
-            f.write("Parsing Tree:\n")
-            for edge in self.edges:
-                father, child = edge
-                f.write(f"{self.nodes[father]} -> {self.nodes[child]}\n")
-
-    def display(self):
-        self.print_tree()
-
-
 class LR0Item:
     def __init__(self, lhs, rhs, dot):
         self.lhs = lhs  # Left-hand side of the production
@@ -131,14 +102,16 @@ class LR0Parser:
                     else:
                         self.action[action_key] = action_value
 
-                    for symbol in self.terminals:
-                        action_key = (i, symbol)
-                        action_value = ('reduce', item.lhs, item.rhs)
-                        if action_key in self.action:
-                            if self.action[action_key] != action_value:
-                                self.conflicts.append((action_key, self.action[action_key], action_value))
-                        else:
-                            self.action[action_key] = action_value
+                    action_key = (i, '$')
+                    if not item.lhs == 'S\'':
+                        for symbol in self.terminals:
+                            action_key = (i, symbol)
+                            action_value = ('reduce', item.lhs, item.rhs)
+                            if action_key in self.action:
+                                if self.action[action_key] != action_value:
+                                    self.conflicts.append((action_key, self.action[action_key], action_value))
+                            else:
+                                self.action[action_key] = action_value
 
         if self.conflicts:
             print("Conflicts found in the parsing table:")
@@ -155,7 +128,7 @@ class LR0Parser:
             return True
         return False
 
-    def parse(self, input_string):
+    def parse_string(self, input_string):
         # Print the states
         print("States:")
         for i, state in enumerate(self.states):
@@ -173,47 +146,51 @@ class LR0Parser:
             state, symbol = key
             print(f"State {state}, Symbol '{symbol}': {value}")
 
-        # Initialize ParserOutput object
-        parse_output = ParserOutput()
-        node_id_stack = [parse_output.add_node(self.start_symbol)]  # Root node for augmented start symbol
-
-        # Parsing process
-        stack = [0]
-        input_symbols = input_string.split() + ['$']
-        input_index = 0  # Track the position in the input string
+        stack = [0]  # Start state is always 0
+        input_symbols = list(input_string) + ['$']  # Add end marker
+        idx = 0  # Pointer to the current symbol in input_string
 
         while True:
-            state = stack[-1]
-            symbol = input_symbols[0]
+            current_state = stack[-1]
+            current_symbol = input_symbols[idx]
+            action_key = (current_state, current_symbol)
 
-            if (state, symbol) in self.action:
-                action = self.action[(state, symbol)]
-                if action[0] == 'shift':
-                    stack.append(action[1])
-                    node_id_stack.append(parse_output.add_node(symbol))
-                    input_symbols.pop(0)
-                    input_index += 1
-                elif action[0] == 'reduce':
-                    lhs, rhs = action[1], action[2]
-                    rhs_node_ids = []
-                    for _ in rhs:
+            if action_key in self.action:
+                action_tuple = self.action[action_key]
+                action = action_tuple[0]
+
+                if action == 'shift':
+                    state = action_tuple[1]
+                    stack.append(current_symbol)
+                    stack.append(state)
+                    idx += 1  # Move to the next symbol in the input string
+                elif action == 'reduce':
+                    lhs = action_tuple[1]
+                    rhs = action_tuple[2]
+                    # Pop the stack twice the length of the right-hand side of the production
+                    for _ in range(2 * len(rhs)):
                         stack.pop()
-                        rhs_node_ids.append(node_id_stack.pop())
-                    new_state = self.goto_table[(stack[-1], lhs)]
-                    stack.append(new_state)
-                    non_terminal_node_id = parse_output.add_node(lhs, node_id_stack[-1] if node_id_stack else None)
-                    for node_id in rhs_node_ids:
-                        parse_output.edges.append((non_terminal_node_id, node_id))
-                    node_id_stack.append(non_terminal_node_id)
-                elif action[0] == 'accept':
-                    if len(input_symbols) > 1:
-                        print("\nError: End of input not reached.")
-                        return None
-                    print("\nSuccessfully parsed.")
-                    parse_output.display()
-                    return parse_output
+                    # Push the left-hand side of the production onto the stack
+                    top_state = stack[-1]
+                    stack.append(lhs)
+                    goto_state = self.goto_table[(top_state, lhs)]
+                    stack.append(goto_state)
+                elif action == 'accept':
+                    print("The string is accepted by the grammar.")
+                    return True
+                else:
+                    print(f"Invalid action: {action}")
+                    return False
             else:
-                print(f"\nError in parsing at position {input_index}: Unexpected symbol '{symbol}'.")
-                return None
+                print(f"No action defined for state {current_state} and symbol '{current_symbol}'.")
+                return False
 
+
+# grammar = {
+#     'S': [['A', 'A']],
+#     'A': [['a', 'A'], ['b']]
+# }
+#
+# parser = LR0Parser(grammar, 'S', ['a', 'b'])
+# parser.parse_string("bb")
 
