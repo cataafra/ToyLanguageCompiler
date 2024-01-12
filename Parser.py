@@ -29,32 +29,12 @@ def read_scanner_output(file_path):
     return tokens
 
 
-def read_symbol_table(file_path):
-    symbol_table = {}
-    with open(file_path, 'r') as file:
-        for line in file:
-            # Skip irrelevant lines
-            if line.strip() and not line.startswith('-'):
-                parts = line.split()
-                symbol = parts[0]
-                value = ' '.join(parts[1:]).strip('"')  # Remove quotes
-                symbol_table[symbol] = value  # Store as string
-    return symbol_table
-
-
-def convert_tokens(scanner_tokens, symbol_table):
+def convert_tokens(scanner_tokens):
     converted_tokens = []
     for token_type, token_value in scanner_tokens:
         if token_type == 'identifier' or token_type == 'constant':
-            # Retrieve actual value from symbol table
-            actual_value = symbol_table.get(str(token_value))
-            if actual_value is not None:
-                converted_tokens.append((actual_value, None))
-            else:
-                # If not found in symbol table, keep the original token
-                converted_tokens.append((token_type, token_value))
+            converted_tokens.append((token_type, token_value))
         else:
-            # Directly append other types of tokens
             converted_tokens.append((token_type, None))
     return converted_tokens
 
@@ -263,11 +243,11 @@ class LR0Parser:
         parser_output = ParserOutput()
         stack = [0]  # Start state is always 0
         node_stack = []
-        idx = 0  # Pointer to the current token in tokens
+        token_iterator = iter(tokens)
 
         while True:
             current_state = stack[-1]
-            current_token = tokens[idx]
+            current_token = next(token_iterator)
             token_type = current_token[0]  # Use the token type for parsing
 
             print(f"Current state: {current_state}, Current token: {current_token}")  # Logging current state and token
@@ -283,7 +263,7 @@ class LR0Parser:
                     state = action_tuple[1]
                     stack.append(token_type)  # Push the token type onto the stack
                     stack.append(state)
-                    idx += 1  # Move to the next token
+                    current_token = next(token_iterator)  # Move to the next token
 
                     new_node_id = parser_output.add_node(token_type)
                     node_stack.append(new_node_id)
