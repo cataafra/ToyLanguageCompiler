@@ -288,6 +288,8 @@ class LR0Parser:
                     new_node_id = parser_output.add_node(token_type)
                     node_stack.append(new_node_id)
                 elif action == 'reduce':
+                    print("Reducing with: ", action_tuple)
+
                     lhs = action_tuple[1]
                     rhs = action_tuple[2]
                     # Pop the stack twice the length of the right-hand side of the production

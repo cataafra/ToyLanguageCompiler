@@ -30,5 +30,5 @@ def complex_test():
 
 
 if __name__ == '__main__':
-    simple_test()
-    # complex_test()
+    # simple_test()
+    complex_test()

@@ -1,4 +1,4 @@
-Non Terminals: program statement_sequence statement_sequence_tail statement declaration normal_declaration arr_declaration type assignment assignment_prime expression expression_prime simple_expression simple_expression_prime term term_prime factor read_statement print_statement if_statement else_part while_statement for_statement relational_operator add_operator mul_operator
+Non Terminals: program epsilon statement_sequence statement_sequence_tail statement declaration normal_declaration arr_declaration type assignment assignment_prime expression expression_prime simple_expression simple_expression_prime term term_prime factor read_statement print_statement if_statement else_part while_statement for_statement relational_operator add_operator mul_operator
 Terminals: ; { } ( ) [ ] = < <= > >= == != + - * / int string bool read print if else while for identifier integer bool string
 Start: program
 program -> statement_sequence
