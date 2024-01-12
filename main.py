@@ -3,7 +3,15 @@ from Grammar import FormalGrammar
 from Parser import *
 
 
-if __name__ == '__main__':
+def simple_test():
+    gr_simple = FormalGrammar("grammar_g4g.in")
+    print(gr_simple)
+
+    parser_simple = LR0Parser(gr_simple.productions, gr_simple.start, gr_simple.terminals)
+    parser_simple.parse_string("a a b b")
+
+
+def complex_test():
     scanner = Scanner('token.in')
     scanner.scan('p0.txt')
     scanner.write_to_files('st.out', 'pif.out')
@@ -18,7 +26,9 @@ if __name__ == '__main__':
 
     converted_tokens = convert_tokens(scanner_tokens, symbol_table)
 
-    parse_tree = parser.parse_tokens(converted_tokens)
+    parser.parse_tokens(converted_tokens)
 
 
-
+if __name__ == '__main__':
+    simple_test()
+    # complex_test()

@@ -29,12 +29,32 @@ def read_scanner_output(file_path):
     return tokens
 
 
-def convert_tokens(scanner_tokens):
+def read_symbol_table(file_path):
+    symbol_table = {}
+    with open(file_path, 'r') as file:
+        i = 0
+        for line in file:
+            value = line.strip()
+            if value == '-' or value == '':
+                value = None
+            symbol_table[i] = value
+            i += 1
+    return symbol_table
+
+
+def convert_tokens(scanner_tokens, symbol_table):
     converted_tokens = []
     for token_type, token_value in scanner_tokens:
         if token_type == 'identifier' or token_type == 'constant':
-            converted_tokens.append((token_type, token_value))
+            actual_value = symbol_table[token_value]
+            if actual_value is not None:
+                converted_tokens.append((token_type, actual_value))
+            else:
+                # If not found in symbol table, keep the original token and print a warning
+                print(f"Warning: {token_type} token with value {token_value} not found in symbol table.")
+                converted_tokens.append((token_type, token_value))
         else:
+            # Directly append other types of tokens
             converted_tokens.append((token_type, None))
     return converted_tokens
 
@@ -238,16 +258,16 @@ class LR0Parser:
             print(f"State {state}, Symbol '{symbol}': {value}")
 
         print("Starting parsing process...")
-        #print("Initial tokens:", tokens[:5])  # Log the first few tokens
+        print("Initial tokens:", tokens[:5])  # Log the first few tokens
 
         parser_output = ParserOutput()
         stack = [0]  # Start state is always 0
         node_stack = []
-        token_iterator = iter(tokens)
+        idx = 0  # Pointer to the current token in tokens
 
         while True:
             current_state = stack[-1]
-            current_token = next(token_iterator)
+            current_token = tokens[idx]
             token_type = current_token[0]  # Use the token type for parsing
 
             print(f"Current state: {current_state}, Current token: {current_token}")  # Logging current state and token
@@ -263,7 +283,7 @@ class LR0Parser:
                     state = action_tuple[1]
                     stack.append(token_type)  # Push the token type onto the stack
                     stack.append(state)
-                    current_token = next(token_iterator)  # Move to the next token
+                    idx += 1  # Move to the next token
 
                     new_node_id = parser_output.add_node(token_type)
                     node_stack.append(new_node_id)
@@ -292,6 +312,7 @@ class LR0Parser:
                     node_stack.append(lhs_node_id)
 
                 elif action == 'accept':
+                    print("\n Parsing finished. \n")
                     print("The string is accepted by the grammar. \n")
                     print("Parsing tree:")
                     parser_output.display_tree()
